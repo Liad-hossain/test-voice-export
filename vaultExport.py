@@ -29,91 +29,97 @@ def download_zip_files(gcs_url, credentials):
 
 
 def download_and_upload(completed_export, credentials):
+    try:
+        files = completed_export.get('cloudStorageSink', {}).get('files', [])
+        if not files:
+            print("No files found in the completed export")
+            return
 
-    files = completed_export.get('cloudStorageSink', {}).get('files', [])
-    if not files:
-        print("No files found in the completed export")
-        return
+        zip_files_downloaded = []
 
-    zip_files_downloaded = []
+        for file_info in files:
+            gcs_url = f"https://storage.googleapis.com/{file_info['bucketName']}/{file_info['objectName']}"
 
-    for file_info in files:
-        gcs_url = f"https://storage.googleapis.com/{file_info['bucketName']}/{file_info['objectName']}"
+            if gcs_url.endswith('.zip'):
+                zip_path = download_zip_files(gcs_url, credentials)
+                zip_files_downloaded.append(zip_path)
+            else:
+                print(f"Skipping non-ZIP file: {gcs_url}")
 
-        if gcs_url.endswith('.zip'):
-            zip_path = download_zip_files(gcs_url, credentials)
-            zip_files_downloaded.append(zip_path)
-        else:
-            print(f"Skipping non-ZIP file: {gcs_url}")
+        audio_files = []
+        for zip_path in zip_files_downloaded:
+            extract_zip_file(zip_path)
+            mbox_files = get_mbox_files()
+            for mbox_file in mbox_files:
+                audio_files.extend(process_mbox_file(mbox_file))
 
-    audio_files = []
-    for zip_path in zip_files_downloaded:
-        extract_zip_file(zip_path)
-        mbox_files = get_mbox_files()
-        for mbox_file in mbox_files:
-            audio_files.extend(process_mbox_file(mbox_file))
+        print(f"All files found: {len(audio_files)} recordings")
+        
+        for recording_info in audio_files:
+            file_name = recording_info['file_name']
+            full_path = os.path.join(EXTRACT_DIR, file_name)
 
-    print(f"All files found: {len(audio_files)} recordings")
-    
-    for recording_info in audio_files:
-        file_name = recording_info['file_name']
-        full_path = os.path.join(EXTRACT_DIR, file_name)
+            if not is_exist_in_sheet(credentials, recording_info['message_id']):
+                upload_to_drive(credentials, full_path, file_name)
+                
+                sheet_data = [
+                    recording_info['message_id'],
+                    recording_info['file_name'],
+                    recording_info['from_number'],
+                    recording_info['to_number'],
+                    recording_info['call_duration'] or 'Unknown',
+                    recording_info['call_type'],
+                    recording_info['date_time']
+                ]
+                add_row_to_sheet(credentials, sheet_data)
+                
+            else:
+                print(f"Recording already exists, skipping: {recording_info['message_id']}")
 
-        if not is_exist_in_sheet(credentials, recording_info['message_id']):
-            upload_to_drive(credentials, full_path, file_name)
-            
-            sheet_data = [
-                recording_info['message_id'],
-                recording_info['file_name'],
-                recording_info['from_number'],
-                recording_info['to_number'],
-                recording_info['call_duration'] or 'Unknown',
-                recording_info['call_type'],
-                recording_info['date_time']
-            ]
-            add_row_to_sheet(credentials, sheet_data)
-            
-        else:
-            print(f"Recording already exists, skipping: {recording_info['message_id']}")
-
-    print("All recordings processed")
+        print("All recordings processed")
+    except Exception as e:
+        print(f"Error in download_and_upload: {e}")
 
 
 
 def run():
-    Path(EXTRACT_DIR).mkdir(parents=True, exist_ok=True)
+    try:
+        Path(EXTRACT_DIR).mkdir(parents=True, exist_ok=True)
 
-    credentials = get_auth_credentials()
+        credentials = get_auth_credentials()
 
-    workspace_admin_email = os.environ.get('WORKSPACE_ADMIN_EMAIL')
-    if workspace_admin_email:
-        credentials = credentials.with_subject(workspace_admin_email)
+        workspace_admin_email = os.environ.get('WORKSPACE_ADMIN_EMAIL')
+        if workspace_admin_email:
+            credentials = credentials.with_subject(workspace_admin_email)
 
-    vault_matter_id = os.environ.get('VAULT_MATTER_ID')
-    if not vault_matter_id:
-        raise ValueError("VAULT_MATTER_ID environment variable not set")
+        vault_matter_id = os.environ.get('VAULT_MATTER_ID')
+        if not vault_matter_id:
+            raise ValueError("VAULT_MATTER_ID environment variable not set")
 
-    request = google_requests.Request()
-    credentials.refresh(request)
+        request = google_requests.Request()
+        credentials.refresh(request)
 
-    exports_url = f"https://vault.googleapis.com/v1/matters/{vault_matter_id}/exports"
-    headers = {"Authorization": f"Bearer {credentials.token}"}
+        exports_url = f"https://vault.googleapis.com/v1/matters/{vault_matter_id}/exports"
+        headers = {"Authorization": f"Bearer {credentials.token}"}
 
-    response = requests.get(exports_url, headers=headers)
-    response.raise_for_status()
-    exports_data = response.json()
+        response = requests.get(exports_url, headers=headers)
+        response.raise_for_status()
+        exports_data = response.json()
 
-    completed_exports = []
-    for export in exports_data.get('exports', []):
-        if export.get('status') == 'COMPLETED':
-            completed_exports.append(export)
+        completed_exports = []
+        for export in exports_data.get('exports', []):
+            if export.get('status') == 'COMPLETED':
+                completed_exports.append(export)
 
-    if not completed_exports:
-        print("No completed export found")
-        return
+        if not completed_exports:
+            print("No completed export found")
+            return
 
-    for completed_export in completed_exports:
-        download_and_upload(completed_export, credentials)
+        for completed_export in completed_exports:
+            download_and_upload(completed_export, credentials)
+    except Exception as e:
+        print(f"Error in run: {e}")
+        
 
 if __name__ == "__main__":
     try:
