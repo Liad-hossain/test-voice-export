@@ -1,8 +1,8 @@
-name: Google Vault Voice Export
+name: Google Vault Voice Export (Python)
 
 on:
   schedule:
-    - cron: "0 * * * *" #Runs on every hour
+    - cron: "0 * * * *" # Runs every hour
   workflow_dispatch:
 
 jobs:
@@ -13,18 +13,20 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
-          node-version: 18
+          python-version: "3.11"
 
       - name: Install dependencies
-        run: npm install google-auth-library axios
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Run Vault Export
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           WORKSPACE_ADMIN_EMAIL: ${{ secrets.WORKSPACE_ADMIN_EMAIL }}
           VAULT_MATTER_ID: ${{ secrets.VAULT_MATTER_ID }}
-          VOICE_USER_EMAIL: ${{ secrets.VOICE_USER_EMAIL }}
-        run: node vaultExport.js
+          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+        run: python vaultExport.py
