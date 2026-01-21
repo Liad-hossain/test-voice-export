@@ -33,27 +33,12 @@ def get_auth_credentials():
     return credentials
 
 
-
-def get_mbox_files():
-    mbox_files = []
-    for root, _, files in os.walk(EXTRACT_DIR):
-        for file in files:
-            if file.endswith('.mbox'):
-                full_path = os.path.join(root, file)
-                rel_path = os.path.relpath(full_path, EXTRACT_DIR)
-                mbox_files.append(rel_path)
-    return mbox_files
-
-
-
 def extract_phone_number(filename):
-    """Extract phone number from filename"""
     match = re.search(r'\+\d{6,15}', filename)
     return match.group(0) if match else "unknown"
 
 
 def get_timestamp():
-    """Get current timestamp in ISO format with safe characters"""
     return datetime.now().isoformat().replace(':', '-').replace('.', '-')
 
 

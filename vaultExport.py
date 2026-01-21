@@ -3,8 +3,8 @@ from pathlib import Path
 import requests
 import shutil
 import google.auth.transport.requests as google_requests
-from utils import build_filename, upload_to_drive, extract_zip_file, get_auth_credentials, get_mbox_files
-from helpers import process_mbox_file
+from utils import upload_to_drive, extract_zip_file, get_auth_credentials
+from helpers import process_mbox_file, get_mbox_files
 
 TEMP_DIR = "./temp"
 EXTRACT_DIR = "./temp/extracted"
@@ -52,16 +52,16 @@ def download_and_upload(completed_export, credentials):
     for zip_path in zip_files_downloaded:
         extract_zip_file(zip_path)
         mbox_files = get_mbox_files()
-        audio_files.extend(process_mbox_file(mbox_file) for mbox_file in mbox_files)
+        for mbox_file in mbox_files:
+            audio_files.extend(process_mbox_file(mbox_file))
 
     print(f"All files found: {audio_files}")
     
     for file_path in audio_files:
         print(f"Uploading file: {file_path}")
         full_path = os.path.join(EXTRACT_DIR, file_path)
-        file_name = build_filename(os.path.basename(file_path))
 
-        upload_to_drive(credentials, full_path, file_name)
+        upload_to_drive(credentials, full_path, file_path)
 
     print("All recordings uploaded")
 
