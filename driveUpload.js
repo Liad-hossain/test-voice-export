@@ -1,6 +1,6 @@
-const { google } = require('googleapis');
-const fs = require('fs');
-const path = require('path');
+const { google } = require("googleapis");
+const fs = require("fs");
+const path = require("path");
 
 /**
  * Upload a file to Google Drive
@@ -9,26 +9,25 @@ const path = require('path');
  * @param {string} parentFolderId - Drive folder ID
  */
 
-
 async function uploadToDrive(auth, filePath, parentFolderId, driveFileName) {
-  const drive = google.drive({ version: 'v3', auth });
+  console.log(`Starting upload for ${driveFileName}`);
+  const drive = google.drive({ version: "v3", auth });
 
   const response = await drive.files.create({
     supportsAllDrives: true,
     requestBody: {
       name: driveFileName,
-      parents: [parentFolderId]
+      parents: [parentFolderId],
     },
     media: {
-      mimeType: 'audio/wav',
-      body: fs.createReadStream(filePath)
+      mimeType: "audio/wav",
+      body: fs.createReadStream(filePath),
     },
-    fields: 'id'
+    fields: "id",
   });
 
   console.log(`Uploaded ${driveFileName}`);
-  console.log('Drive upload response:', response.data);
+  console.log("Drive upload response:", response.data);
 }
-
 
 module.exports = { uploadToDrive };

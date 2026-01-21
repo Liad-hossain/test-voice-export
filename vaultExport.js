@@ -87,14 +87,16 @@ async function run() {
     .promise();
 
   console.log("ZIP extracted");
-  console.log('Files in extract dir:', fs.readdirSync(EXTRACT_DIR));
-
+  console.log("Files in extract dir:", fs.readdirSync(EXTRACT_DIR));
 
   // --- Upload audio files ---
   const files = fs.readdirSync(EXTRACT_DIR, { recursive: true });
+  console.log("All files found:", files);
 
   for (const file of files) {
+    console.log("Checking file:", file);
     if (file.endsWith(".wav") || file.endsWith(".mp3")) {
+      console.log("Uploading file:", file);
       const fullPath = path.join(EXTRACT_DIR, file);
       const fileName = buildFilename(path.basename(file));
       await uploadToDrive(
@@ -103,6 +105,8 @@ async function run() {
         process.env.DRIVE_FOLDER_ID,
         fileName,
       );
+    } else {
+      console.log("Skipping file (not audio):", file);
     }
   }
 
