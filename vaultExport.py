@@ -79,6 +79,7 @@ def download_and_upload(completed_export, credentials):
         print("All recordings processed")
     except Exception as e:
         print(f"Error in download_and_upload: {e}")
+        raise
 
 
 
@@ -119,6 +120,7 @@ def run():
             download_and_upload(completed_export, credentials)
     except Exception as e:
         print(f"Error in run: {e}")
+        raise
         
 
 if __name__ == "__main__":

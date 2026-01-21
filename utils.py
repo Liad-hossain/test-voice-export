@@ -64,8 +64,21 @@ def is_exist_in_sheet(credentials, id):
     sheet = sheets_service.spreadsheets()
     sheet_id = os.environ.get('GOOGLE_SPREADSHEET_ID')
     sheet_tab_name = os.environ.get('GOOGLE_SHEET_TAB_NAME', '')
+
+    # Debug: Print the values to identify issues
+    print(f"Debug - GOOGLE_SPREADSHEET_ID: '{sheet_id}'")
+    print(f"Debug - GOOGLE_SHEET_TAB_NAME: '{sheet_tab_name}'")
+    print(f"Debug - Sheet ID length: {len(sheet_id) if sheet_id else 0}")
+    print(f"Debug - Sheet tab name length: {len(sheet_tab_name) if sheet_tab_name else 0}")
+
     if not sheet_id or not sheet_tab_name:
-        raise ValueError("GOOGLE_SPREADSHEET_ID or GOOGLE_SHEET_TAB_NAME environment variable not set")
+        raise ValueError(f"GOOGLE_SPREADSHEET_ID or GOOGLE_SHEET_TAB_NAME environment variable not set. Sheet ID: '{sheet_id}', Tab Name: '{sheet_tab_name}'")
+
+    sheet_id = sheet_id.strip() if sheet_id else None
+    sheet_tab_name = sheet_tab_name.strip() if sheet_tab_name else None
+
+    print(f"Debug - Cleaned Sheet ID: '{sheet_id}'")
+    print(f"Debug - Cleaned Tab Name: '{sheet_tab_name}'")
 
     result = sheet.values().get(
         spreadsheetId=sheet_id,
@@ -84,9 +97,18 @@ def add_row_to_sheet(credentials, sheet_data):
     sheet = sheets_service.spreadsheets()
     sheet_id = os.environ.get('GOOGLE_SPREADSHEET_ID')
     sheet_tab_name = os.environ.get('GOOGLE_SHEET_TAB_NAME', '')
-    
+
+    print(f"Debug - GOOGLE_SPREADSHEET_ID: '{sheet_id}'")
+    print(f"Debug - GOOGLE_SHEET_TAB_NAME: '{sheet_tab_name}'")
+
     if not sheet_id or not sheet_tab_name:
-        raise ValueError("GOOGLE_SPREADSHEET_ID or GOOGLE_SHEET_TAB_NAME environment variable not set")
+        raise ValueError(f"GOOGLE_SPREADSHEET_ID or GOOGLE_SHEET_TAB_NAME environment variable not set. Sheet ID: '{sheet_id}', Tab Name: '{sheet_tab_name}'")
+
+    sheet_id = sheet_id.strip() if sheet_id else None
+    sheet_tab_name = sheet_tab_name.strip() if sheet_tab_name else None
+
+    print(f"Debug - Cleaned Sheet ID: '{sheet_id}'")
+    print(f"Debug - Cleaned Tab Name: '{sheet_tab_name}'")
 
     body = {
         'values': sheet_data

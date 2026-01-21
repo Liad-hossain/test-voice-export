@@ -29,4 +29,6 @@ jobs:
           WORKSPACE_ADMIN_EMAIL: ${{ secrets.WORKSPACE_ADMIN_EMAIL }}
           VAULT_MATTER_ID: ${{ secrets.VAULT_MATTER_ID }}
           DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+          GOOGLE_SPREADSHEET_ID: ${{ secrets.GOOGLE_SPREADSHEET_ID }}
+          GOOGLE_SHEET_TAB_NAME: ${{ secrets.GOOGLE_SHEET_TAB_NAME }}
         run: python vaultExport.py
