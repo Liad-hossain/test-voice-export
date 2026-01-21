@@ -2,7 +2,7 @@ name: Google Vault Voice Export
 
 on:
   schedule:
-    - cron: "*/30 * * * *" # Every 30 minutes
+    - cron: "0 * * * *" #Runs on every hour
   workflow_dispatch:
 
 jobs:
