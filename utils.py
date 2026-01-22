@@ -12,7 +12,6 @@ from google.oauth2 import service_account
 
 TEMP_DIR = "./temp"
 EXTRACT_DIR = "./temp/extracted"
-LAST_EXPORT_FILE = "last_export_time.txt"
 
 
 def get_auth_credentials():
@@ -175,16 +174,5 @@ def extract_zip_file(zip_path):
         print("Downloaded file is not a valid ZIP file!")
 
 
-def get_last_export_time():
-    if os.path.exists(LAST_EXPORT_FILE):
-        with open(LAST_EXPORT_FILE, 'r') as f:
-            timestamp = f.read().strip()
-            if timestamp:
-                return timestamp
-    # Default to 30 days ago if no last export time exists
+def get_export_start_time():
     return (datetime.datetime.now() - datetime.timedelta(days=30)).isoformat() + "Z"
-
-
-def update_last_export_time(timestamp):
-    with open(LAST_EXPORT_FILE, 'w') as f:
-        f.write(timestamp)

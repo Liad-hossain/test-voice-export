@@ -4,7 +4,7 @@ from pathlib import Path
 import requests
 import shutil
 import google.auth.transport.requests as google_requests
-from utils import upload_to_drive, extract_zip_file, get_auth_credentials, is_exist_in_sheet, append_rows_to_sheet, get_existing_message_ids, get_last_export_time, update_last_export_time
+from utils import upload_to_drive, extract_zip_file, get_auth_credentials, is_exist_in_sheet, append_rows_to_sheet, get_existing_message_ids, get_export_start_time
 from helpers import process_mbox_file, get_mbox_files
 
 TEMP_DIR = "./temp"
@@ -85,13 +85,13 @@ def download_and_upload(export_data, credentials):
 
 
 def create_export(credentials):
-    exports_url = f"https://vault.googleapis.com/v1/matters/{vault_matter_id}/exports"
-    headers = {"Authorization": f"Bearer {credentials.token}"}
-    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     workspace_admin_email = os.environ.get('WORKSPACE_ADMIN_EMAIL')
     vault_matter_id = os.environ.get('VAULT_MATTER_ID')
     if not vault_matter_id:
         raise ValueError("VAULT_MATTER_ID environment variable not set")
+    exports_url = f"https://vault.googleapis.com/v1/matters/{vault_matter_id}/exports"
+    headers = {"Authorization": f"Bearer {credentials.token}"}
+    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     
     body = {
         "name": f"Voice_Recordings_Export_{timestamp}",
@@ -102,7 +102,7 @@ def create_export(credentials):
             "accountInfo": {
                 "emails": [workspace_admin_email]
             },
-            "startTime": get_last_export_time()
+            "startTime": get_export_start_time()
         },
         "exportOptions": {
             "voiceOptions": {
@@ -117,11 +117,11 @@ def create_export(credentials):
 
 
 def get_exports(credentials):
-    exports_url = f"https://vault.googleapis.com/v1/matters/{vault_matter_id}/exports"
-    headers = {"Authorization": f"Bearer {credentials.token}"}
     vault_matter_id = os.environ.get('VAULT_MATTER_ID')
     if not vault_matter_id:
         raise ValueError("VAULT_MATTER_ID environment variable not set")
+    exports_url = f"https://vault.googleapis.com/v1/matters/{vault_matter_id}/exports"
+    headers = {"Authorization": f"Bearer {credentials.token}"}
 
     response = requests.get(exports_url, headers=headers)
     response.raise_for_status()
@@ -142,15 +142,12 @@ def run():
         request = google_requests.Request()
         credentials.refresh(request)
 
-        # export_data = create_export(credentials)
-        # download_and_upload(export_data, credentials)
+        export_data = create_export(credentials)
+        download_and_upload(export_data, credentials)
         
-        exports_data = get_exports(credentials)
-        for export in exports_data:
-            download_and_upload(export, credentials)
-
-        update_last_export_time((datetime.datetime.now() - datetime.timedelta(minutes=30)).isoformat() + "Z")
-
+        # exports_data = get_exports(credentials)
+        # for export in exports_data:
+        #     download_and_upload(export, credentials)
 
     except Exception as e:
         print(f"Error in run: {e}")
