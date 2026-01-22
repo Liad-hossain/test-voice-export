@@ -28,9 +28,9 @@ def download_zip_files(gcs_url, credentials):
 
 
 
-def download_and_upload(completed_export, credentials):
+def download_and_upload(export_data, credentials):
     try:
-        files = completed_export.get('cloudStorageSink', {}).get('files', [])
+        files = export_data.get('cloudStorageSink', {}).get('files', [])
         if not files:
             print("No files found in the completed export")
             return
@@ -104,21 +104,12 @@ def run():
         exports_url = f"https://vault.googleapis.com/v1/matters/{vault_matter_id}/exports"
         headers = {"Authorization": f"Bearer {credentials.token}"}
 
-        response = requests.get(exports_url, headers=headers)
+        response = requests.post(exports_url, headers=headers)
         response.raise_for_status()
-        exports_data = response.json()
+        export_data = response.json()
 
-        completed_exports = []
-        for export in exports_data.get('exports', []):
-            if export.get('status') == 'COMPLETED':
-                completed_exports.append(export)
+        download_and_upload(export_data, credentials)
 
-        if not completed_exports:
-            print("No completed export found")
-            return
-
-        for completed_export in completed_exports:
-            download_and_upload(completed_export, credentials)
     except Exception as e:
         print(f"Error in run: {e}")
         raise
