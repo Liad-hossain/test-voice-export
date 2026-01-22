@@ -60,7 +60,7 @@ def upload_to_drive(credentials, file_path, drive_file_name):
     return file
 
 
-def is_exist_in_sheet(credentials, id):
+def get_existing_message_ids(credentials):
     sheets_service = build('sheets', 'v4', credentials=credentials)
     sheet = sheets_service.spreadsheets()
     sheet_id = os.environ.get('GOOGLE_SPREADSHEET_ID')
@@ -77,15 +77,19 @@ def is_exist_in_sheet(credentials, id):
         spreadsheetId=sheet_id,
         range=f'{sheet_tab_name}!A:A'
     ).execute()
+    
+    
+    message_ids = []
+    for row in result.get('values', []):
+        message_ids.append(row[0])
+    return message_ids
 
-    values = result.get('values', [])
-    for row in values:
-        if row and row[0] == id:
-            return True
-    return False
+
+def is_exist_in_sheet(message_ids, id):
+    return id in message_ids
 
 
-def add_row_to_sheet(credentials, sheet_data):
+def append_rows_to_sheet(credentials, sheet_data):
     sheets_service = build('sheets', 'v4', credentials=credentials)
     sheet = sheets_service.spreadsheets()
     sheet_id = os.environ.get('GOOGLE_SPREADSHEET_ID')

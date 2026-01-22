@@ -3,7 +3,7 @@ from pathlib import Path
 import requests
 import shutil
 import google.auth.transport.requests as google_requests
-from utils import upload_to_drive, extract_zip_file, get_auth_credentials, is_exist_in_sheet, add_row_to_sheet
+from utils import upload_to_drive, extract_zip_file, get_auth_credentials, is_exist_in_sheet, append_rows_to_sheet, get_existing_message_ids
 from helpers import process_mbox_file, get_mbox_files
 
 TEMP_DIR = "./temp"
@@ -55,11 +55,12 @@ def download_and_upload(completed_export, credentials):
 
         print(f"All files found: {len(audio_files)} recordings")
         
+        message_ids = get_existing_message_ids(credentials)
         for recording_info in audio_files:
             file_name = recording_info['file_name']
             full_path = os.path.join(EXTRACT_DIR, file_name)
 
-            if not is_exist_in_sheet(credentials, recording_info['message_id']):
+            if not is_exist_in_sheet(message_ids, recording_info['message_id']):
                 upload_to_drive(credentials, full_path, file_name)
                 
                 sheet_data = [
@@ -71,7 +72,7 @@ def download_and_upload(completed_export, credentials):
                     recording_info['call_type'],
                     recording_info['date_time']
                 ]
-                add_row_to_sheet(credentials, sheet_data)
+                append_rows_to_sheet(credentials, sheet_data)
                 
             else:
                 print(f"Recording already exists, skipping: {recording_info['message_id']}")
