@@ -1,9 +1,10 @@
 import os
+import datetime
 from pathlib import Path
 import requests
 import shutil
 import google.auth.transport.requests as google_requests
-from utils import upload_to_drive, extract_zip_file, get_auth_credentials, is_exist_in_sheet, append_rows_to_sheet, get_existing_message_ids
+from utils import upload_to_drive, extract_zip_file, get_auth_credentials, is_exist_in_sheet, append_rows_to_sheet, get_existing_message_ids, get_last_export_time, update_last_export_time
 from helpers import process_mbox_file, get_mbox_files
 
 TEMP_DIR = "./temp"
@@ -103,12 +104,32 @@ def run():
 
         exports_url = f"https://vault.googleapis.com/v1/matters/{vault_matter_id}/exports"
         headers = {"Authorization": f"Bearer {credentials.token}"}
+        timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        body = {
+            "name": f"Voice_Recordings_Export_{timestamp}",
+            "query": {
+                "corpus": "VOICE",
+                "dataScope": "ALL_DATA",
+                "searchMethod": "ACCOUNT",
+                "accountInfo": {
+                    "emails": [workspace_admin_email]
+                },
+                "startTime": get_last_export_time()
+            },
+            "exportOptions": {
+                "voiceOptions": {
+                    "exportFormat": "MBOX"
+                }
+            }
+        }
 
-        response = requests.post(exports_url, headers=headers)
+        response = requests.post(exports_url, headers=headers, json=body)
         response.raise_for_status()
         export_data = response.json()
 
         download_and_upload(export_data, credentials)
+        update_last_export_time((datetime.datetime.now() - datetime.timedelta(minutes=30)).isoformat() + "Z")
+
 
     except Exception as e:
         print(f"Error in run: {e}")
